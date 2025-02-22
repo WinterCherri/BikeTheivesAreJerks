@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
+import 'views/device_details_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,8 +12,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BLE Scanner',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'BLE Scanner test2',
+      theme: ThemeData(primarySwatch: Colors.red),
       home: BLEScanner(),
     );
   }
@@ -102,13 +103,19 @@ class _BLEScannerState extends State<BLEScanner> {
       print("Connected to ${device.platformName}");
 
       // Listen for connection state changes
-      device.state.listen((state) {
-        if (state == BluetoothDeviceState.connected) {
+      device.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.connected) {
           print("Successfully connected to ${device.platformName}");
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Connected to ${device.platformName}")),
           );
-        } else if (state == BluetoothDeviceState.disconnected) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DeviceDetailsScreen(device: device),
+            ),
+          );
+        } else if (state == BluetoothConnectionState.disconnected) {
           print("Disconnected from ${device.platformName}");
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Disconnected from ${device.platformName}")),
@@ -147,21 +154,27 @@ class _BLEScannerState extends State<BLEScanner> {
                       ),
                     )
                     : ListView.builder(
-                      itemCount: devicesList.length,
+                      itemCount:
+                          devicesList
+                              .where((device) => device.platformName.isNotEmpty)
+                              .length,
                       itemBuilder: (context, index) {
+                        var filteredDevices =
+                            devicesList
+                                .where(
+                                  (device) => device.platformName.isNotEmpty,
+                                )
+                                .toList();
                         return ListTile(
-                          title: Text(
-                            devicesList[index].platformName.isNotEmpty
-                                ? devicesList[index].platformName
-                                : "Unknown Device",
-                          ),
+                          title: Text(filteredDevices[index].platformName),
                           subtitle: Text(
-                            devicesList[index].remoteId.toString(),
+                            filteredDevices[index].remoteId.toString(),
                           ),
-                          onTap: () => connectToDevice(devicesList[index]),
+                          onTap: () => connectToDevice(filteredDevices[index]),
                           trailing: IconButton(
                             icon: Icon(Icons.delete),
-                            onPressed: () => unpairDevice(devicesList[index]),
+                            onPressed:
+                                () => unpairDevice(filteredDevices[index]),
                           ),
                         );
                       },
