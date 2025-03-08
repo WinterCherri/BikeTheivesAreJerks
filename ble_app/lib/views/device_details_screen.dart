@@ -15,11 +15,13 @@ class DeviceDetailsScreen extends StatefulWidget {
 class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
   int? rssi;
   Timer? _timer;
+  String receivedData = "";
 
   @override
   void initState() {
     super.initState();
     _startRssiUpdates();
+    _startListeningForData();
   }
 
   @override
@@ -30,11 +32,63 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
 
   void _startRssiUpdates() {
     _timer = Timer.periodic(Duration(milliseconds: 500), (timer) async {
-      int newRssi = await widget.device.readRssi();
-      setState(() {
-        rssi = newRssi;
-      });
+      try {
+        int newRssi = await widget.device.readRssi();
+        if (mounted) {
+          setState(() {
+            rssi = newRssi;
+          });
+        }
+      } catch (e) {
+        print("Error reading RSSI: $e");
+        if (e.toString().contains("device is not connected")) {
+          _timer?.cancel();
+          _showDisconnectedDialog();
+        }
+      }
     });
+  }
+
+  void _startListeningForData() async {
+    try {
+      List<BluetoothService> services = await widget.device.discoverServices();
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
+          if (characteristic.properties.notify) {
+            await characteristic.setNotifyValue(true);
+            characteristic.value.listen((value) {
+              setState(() {
+                receivedData = String.fromCharCodes(value);
+              });
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print("Error discovering services: $e");
+      _showDisconnectedDialog();
+    }
+  }
+
+  void _showDisconnectedDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text("Disconnected"),
+            content: Text("The device has been disconnected."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: Text("OK"),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -42,12 +96,22 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Device Details')),
       body: Center(
-        child:
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             rssi == null
                 ? CircularProgressIndicator()
                 : Text(
                   'Distance: ${calculateDistance(rssi!).toStringAsFixed(2)} meters',
                 ),
+            SizedBox(height: 20),
+            Text(
+              'Received Data: $receivedData',
+              style: TextStyle(fontSize: 18, color: Colors.black),
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
