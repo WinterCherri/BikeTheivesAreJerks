@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "823950096800",
+    "project_id": "bikethievesarejerks",
+    "storage_bucket": "bikethievesarejerks.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823950096800:android:bb5d236c89b015bf0e4cc5",
+        "android_client_info": {
+          "package_name": "com.example.ble_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsWWqHWMzppl8Fk3UsnNbPgYRguQUYyuE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
